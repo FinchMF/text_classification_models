@@ -18,11 +18,11 @@ class Fetch:
         soup = BeautifulSoup(page.content, 'html.parser')
 
         containers = soup.find_all('div', class_ = 'lister-item mode-advanced')
-
+        print('[i] Website Reached...')
         data_set = pd.DataFrame()
-
+        print('[i] Empty Dataframe Set...')
         for container in containers:
-
+            print('[+] Inspect Page Container...')
             if container.find('div', class_ = 'ratings-metascore') is not None:
 
                 num_reviews = 550
@@ -30,16 +30,18 @@ class Fetch:
                 review_page = requests.get(f'{self.url_header}{url_mid}{self.url_end}')
                 review_soup = BeautifulSoup(review_page.text, 'html.parser')
                 review_containers = review_soup.find_all('div', class_ = 'imdb-user-review')
-
+                print('[+] Reviews in Container found...')
                 if len(review_containers) < num_reviews:
 
                     num_reviews = len(review_containers)
 
+                print(f'[i] Number of Reviews {num_reviews}')
+                
                 review_titles = []
                 review_bodies = []
 
                 for review_idx in range(num_reviews):
-
+                    print('[+] Parsing Review...')
                     review_container = review_containers[review_idx]
 
                     review_title = review_container.find('a', class_ = 'title').text.strip()
@@ -59,18 +61,18 @@ class Fetch:
 
                 metascore = container.find('span', class_ = 'metascore').text
                 metascores = [metascore for i in range(num_reviews)]
-
+                print('[i] Building Sentiment Labels...')
                 sentiments = []
                 for text in review_bodies:
                     senti = TextBlob(text).sentiment.polarity
-
+                    print(f'[+] Review: {text}')
+                    print(f'[+] Sentiment Polarity: {senti}')
                     if senti > 0:
                         sentiments.append('positive')
                     if senti == 0:
                         sentiments.append('neutral')
                     if senti < 0:
                         sentiments.append('negative')
-
 
                 if data_set.empty:
                     data_set = pd.DataFrame({
@@ -98,7 +100,7 @@ class Fetch:
                     }))
 
         data_set.to_csv('data/labeled_dataset.csv')
-
+        print('[+] Data saved in Data Folder...')
         return data_set
 
 
