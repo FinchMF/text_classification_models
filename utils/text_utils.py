@@ -18,6 +18,7 @@ def read_in_csv_data(csv):
 
 def tokenizer(text):
 
+    text = ''.join(text)
     text = text.lower()
     all_text = ''.join([char for char in text if char not in punctuation])
 
@@ -43,8 +44,8 @@ def encode_tokens(tokens, text_split):
 
 def encode_labels(labels):
 
-    labels_split = labels.split('\n')
-    encoded_labels = np.array([1 if label == 'positive' else 0 for label in labels_split])
+    # labels_split = labels.split('\n')
+    encoded_labels = np.array([1 if label == 'positive' else 0 for label in labels])
     
     return encoded_labels
 
@@ -65,7 +66,7 @@ def tokenize_input(test, vocab_to_int):
     test = test.lower()
     text = ''.join([char for char in test if char not in punctuation])
     words = text.split()
-    
+
     tokens = []
     tokens.append([vocab_to_int[word] for word in words])
 
