@@ -1,5 +1,5 @@
 
-import train_utils as tu 
+import utils.train_utils as tu 
 import utils.utils_params as up 
 
 from models.LSTM import LSTM_Classifier
