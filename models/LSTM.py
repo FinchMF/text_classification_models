@@ -1,5 +1,4 @@
 
-
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -7,38 +6,52 @@ from torch.nn import functional as F
 
 class LSTM_Classifier(nn.Module):
 
-    def __init__(self, batch_size, output_size, hidden_size, vocab_size, emedding_dim, weights):
+    def __init__(self, vocab_size, output_size, embedding_dim, hidden_dim, n_layers, drop_prob=0.5):
         super(LSTM_Classifier, self).__init__()
 
-        self.batch_size = batch_size
-        self.output_size = output_size
-        self.hidden_size = hidden_size
-        self.vocab_size = vocab_size
-        self.embedding_dim = emedding_dim
-        self.weights = weights
+        self.output_size=output_size
+        self.n_layers=n_layers
+        self.hidden_dim=hidden_dim
+        self.lstm=nn.LSTM(embedding_dim, hidden_dim, n_layers, dropout=drop_prob, batch_first=True)
+        self.dropout = nn.Dropout(0.3)
+        self.fc=nn.Linear(hidden_dim, output_size)
+        self.sigmoid=nn.Sigmoid()
 
-        self.word_embeddings = nn.Embedding(vocab_size, emedding_dim)
-        self.word_embeddings.weight = nn.Parameter(weights, requires_grad=False)
-        self.lstm = nn.LSTM(self.embedding_dim, self.hidden_size)
-        self.label = nn.Linear(self.hidden_size, self.output_size)
+    def forward(self, x, hidden):
 
-    def forward(self, input_sentence, batch_size=None):
+        batch_size=x.size(0)
 
-        inpt = self.word_embeddings(input_sentence)
-        inpt = inpt.permute(1, 0, 2)
+        embeds=self.embedding(x)
+        lstm_out, hidden = self.lstm(embeds, hidden)
+        lstm_out=lstm_out.contiguous().view(-1, self.hidden_dim)
+        out=self.dropout(lstm_out)
+        out=self.fc(out)
+        sig_out=self.sigmoid(out)
 
-        if batch_size is None:
+        sig_out=sig_out.view(batch_size, -1)
+        sig_out=sig_out[:, -1]
 
-            h_0 = Variable(torch.zeros(1, self.batch_size, self.hidden_size).cuda())
-            c_0 = Variable(torch.zeros(1, self.batch_size, self.hidden_size).cuda())
+        return sig_out, hidden
+
+    def init_hidden(self, batch_size):
+
+        weight=next(self.parameters()).data
+
+        train_on_gpu=torch.cuda.is_available()
+
+        if train_on_gpu:
+            
+            hidden=(weight.new(self.n_layers, batch_size,
+            self.hidden_dim).zero_().cuda(),
+            weight.new(self.n_layers, batch_size, self.hidden_dim).zero_().cuda())
 
         else:
+            hidden=(weight.new(self.n_layers, batch_size,
+            self.hidden_dim).zero_(),
+            weight.new(self.n_layers, batch_size, self.hidden_dim).zero_())
 
-            h_0 = Variable(torch.zeros(1, batch_size, self.hidden_size).cuda())
-            c_0 = Variable(torch.zeros(1, batch_size, self.hidden_size).cuda())
+        return hidden    
 
-        output_size, out_h, out_c = self.lstm(inpt, (h_0, c_0))
-        output = self.label(out_h[-1])
 
-        return output
+
 
