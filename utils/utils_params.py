@@ -40,7 +40,7 @@ def configure_utility_params():
 
 def configure_path_params():
 
-    root = './data/labeled_dataset.csv',
+    root = './data/labeled_dataset.csv'
     name = 'LSTM-201026'
 
     return root, name
