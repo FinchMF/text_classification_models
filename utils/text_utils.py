@@ -44,7 +44,6 @@ def encode_tokens(tokens, text_split):
 
 def encode_labels(labels):
 
-    # labels_split = labels.split('\n')
     encoded_labels = np.array([1 if label == 'positive' else 0 for label in labels])
     
     return encoded_labels
