@@ -12,7 +12,9 @@ def read_in_csv_data(csv):
     data = pd.read_csv(csv)
     print('[i] Reading in dataaset....')
     text = list(data['review_text'])
+    print(f'Number of Text: {len(text)}')
     labels = list(data['sentiment'])
+    print(f'Number of Labels: {len(labels)}')
 
     return text, labels
 

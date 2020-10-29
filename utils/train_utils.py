@@ -30,27 +30,31 @@ def extract_features(root):
     encoded_labels = np.array([D.encode_labels[ii] for ii in non_zero_idx])
 
     print('\n')
-    print(f'[i] Number of Text after removing outliers: {len(D.text_ints)}')
+    print(f'[i] Number of Text after removing outliers: {len(text_ints)}')
     print('\n')
 
     utility_params = configure_utility_params()
 
-    features = pad_features(D.text_ints, utility_params['seq_length'])
+    features = pad_features(text_ints, utility_params['seq_length'])
 
-    assert len(features) == len(D.text_ints)
-    assert (features[0]) == utility_params['seq_length']
+    assert len(features) == len(text_ints)
+    assert len(features[0]) == utility_params['seq_length']
 
-    return features, D
+    return features, encoded_labels
 
-def split_feature_data(features, D):
+def split_feature_data(features, encoded_labels):
+
+    print(f'Number of Features: {len(features)}')
+    print(f'Number of Encoded Labels: {len(encoded_labels)}')
 
     utility_params = configure_utility_params()
 
     split_idx = int(len(features)*utility_params['split_frac'])
+    print(f'Split Index: {split_idx}')
 
     train_x, remaining_x = features[:split_idx], features[split_idx:]
-    train_y, remaining_y = D.encode_labels[:split_idx], D.encode_labels[split_idx:]
-    print(len(remaining_y))
+    train_y, remaining_y = encoded_labels[:split_idx], encoded_labels[split_idx:]
+    print(f'[+] Validation / Test Y: {len(remaining_y)}')
 
     test_idx = int(len(remaining_x)*0.5)
     print(f'[+] Test Index: {test_idx}')
@@ -69,7 +73,7 @@ def split_feature_data(features, D):
         f'\n[i] Test set: \t\t{test_y.shape}')
     print('\n')
 
-    return train_x, remaining_x, train_y, remaining_y, val_x, val_y, test_x, test_y
+    return train_x, train_y, val_x, val_y, test_x, test_y
 
 def transform_split_data(train_x, train_y, val_x, val_y, test_x, test_y):
 
@@ -117,7 +121,7 @@ def train_loop(net, train_loader, valid_loader, name):
 
         h = net.init_hidden(utility_params['batch_size'])
 
-        for inputs, lables in train_loader:
+        for inputs, labels in train_loader:
             counter += 1
 
             if train_on_gpu:
@@ -159,7 +163,7 @@ def train_loop(net, train_loader, valid_loader, name):
                             'Val Loss: {:.6}'.format(np.mean(val_losses)))
 
     torch.save(net.state_dict, f'./models/gen_models/{name}_paramsDict.pth')
-    print('Senti_Net Classifier\'s parameters saved....')
+    print('LSTM Classifier\'s parameters saved....')
     torch.save(net, f'./models/gen_models/{name}_lstm_classifer.pth')
     print('LSTM Classifier saved....') 
 
@@ -169,14 +173,21 @@ def train_loop(net, train_loader, valid_loader, name):
 
 def training_pipeine(net, root, name):
 
-   features, D = extract_features(root)
-   train_x, remaining_x, train_y, remaining_y, val_x, val_y, test_x, test_y = split_feature_data(features, D)
-   train_data, valid_data, test_data, train_loader, valid_loader, test_loader = transform_split_data(train_x, train_y, val_x, val_y, test_x, test_y)
-   sample_x, sample_y = generate_sample(train_loader)
+    features, encoded_labels = extract_features(root)
+    train_x, train_y, val_x, val_y, test_x, test_y = split_feature_data(features, encoded_labels)
+    train_data, valid_data, test_data, train_loader, valid_loader, test_loader = transform_split_data(train_x, train_y, val_x, val_y, test_x, test_y)
+    sample_x, sample_y = generate_sample(train_loader)
 
-   train_loop(net, train_loader, valid_loader, name)
+    print(f'Sample Input size: {sample_x.size()}')
+    print(f'Sample Input: \n {sample_x}')
+    print('\n')
+    print(f'Sample Label size: {sample_y.size()}')
+    print(f'Sample Label: \n {sample_y}')
+    print('\n')
 
-   return print('[i] Finish Training')
+    train_loop(net, train_loader, valid_loader, name)
+
+    return print('[i] Finish Training')
 
 
 
