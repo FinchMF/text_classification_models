@@ -1,6 +1,7 @@
 # text_classification_models
 
 NOTE: Work in Progress
+* LSTM is built. Still building other models 
 
 ## HOW TO RUN:
 
